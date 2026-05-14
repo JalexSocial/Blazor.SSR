@@ -34,6 +34,11 @@ const forbiddenTerms = [
   'WebAssemblyStartOptions',
   'InputFile',
   'Virtualize',
+  'DotNet',
+  'dotnet',
+  'InteractiveServer',
+  'InteractiveWebAssembly',
+  'InteractiveAuto',
   'LogicalElements',
   'Rendering/DomMerging/DomSync',
   './DomMerging/DomSync',
@@ -46,7 +51,7 @@ const missingRequiredFiles = requiredFiles.filter(file => !visitedFiles.has(file
 const findings = [];
 
 for (const file of inspectedFiles) {
-  const content = fs.readFileSync(file, 'utf8');
+  const content = stripComments(fs.readFileSync(file, 'utf8'));
   for (const term of forbiddenTerms) {
     if (content.includes(term)) {
       findings.push({ file, term });
@@ -136,4 +141,11 @@ function resolveTypeScriptImport(importPath) {
   ];
 
   return candidates.find(candidate => fs.existsSync(candidate) && fs.statSync(candidate).isFile()) || null;
+}
+
+
+function stripComments(content) {
+  return content
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '');
 }

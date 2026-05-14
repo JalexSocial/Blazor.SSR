@@ -1,7 +1,7 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-import { WebRendererId } from '../Rendering/WebRendererId';
+type WebRendererId = number;
 
 let interactiveRouterRendererId: WebRendererId | undefined = undefined;
 let programmaticEnhancedNavigationHandler: typeof performProgrammaticEnhancedNavigation | undefined;
@@ -32,10 +32,19 @@ export function handleClickForNavigationInterception(event: MouseEvent, callback
 
     const absoluteHref = toAbsoluteUri(anchorHref);
 
-    if (isWithinBaseUriSpace(absoluteHref)) {
+    if (isHttpOrHttpsUri(absoluteHref) && isWithinBaseUriSpace(absoluteHref)) {
       event.preventDefault();
       callbackIfIntercepted(absoluteHref);
     }
+  }
+}
+
+export function isHttpOrHttpsUri(href: string): boolean {
+  try {
+    const url = new URL(href);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
   }
 }
 

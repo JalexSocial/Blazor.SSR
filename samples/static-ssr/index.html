@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <base href="/">
+  <title>Static SSR runtime fixture</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+    nav a { margin-right: 1rem; }
+    [data-permanent] { padding: .5rem; border: 1px solid #888; }
+  </style>
+</head>
+<body>
+  <blazor-focus-on-navigate selector="h1"></blazor-focus-on-navigate>
+
+  <h1>Static SSR runtime fixture</h1>
+  <p>This is a static markup fixture. Enhanced navigation and form submissions require a compatible server response; the streaming button demonstrates client-side marker replacement in-place.</p>
+
+  <nav>
+    <a href="/samples/static-ssr/index.html">Enhanced self link</a>
+    <a href="/samples/static-ssr/details.html" data-enhance-nav="true">Enhanced details link</a>
+    <a href="https://example.com/">External link falls back</a>
+    <a href="mailto:hello@example.com">Mail link falls back</a>
+  </nav>
+
+  <section>
+    <h2>Enhanced form</h2>
+    <form data-enhance method="get" action="/samples/static-ssr/search">
+      <label>
+        Search
+        <input name="q" value="static ssr">
+      </label>
+      <button type="submit" name="source" value="fixture">Search</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>Permanent DOM</h2>
+    <div id="client-state" data-permanent>
+      This island is marked with <code>data-permanent</code> and should be preserved across enhanced document updates.
+    </div>
+  </section>
+
+  <section>
+    <h2>Streaming marker fixture</h2>
+    <!--bl:fixture-stream-->
+    <p>Initial streamed content placeholder.</p>
+    <!--/bl:fixture-stream-->
+
+    <template id="streaming-update-fixture">
+      <blazor-ssr>
+        <template blazor-component-id="fixture-stream">
+          <p>Replacement content from a streaming SSR update.</p>
+        </template>
+        <blazor-ssr-end></blazor-ssr-end>
+      </blazor-ssr>
+    </template>
+    <button type="button" onclick="document.body.append(document.getElementById('streaming-update-fixture').content.cloneNode(true))">
+      Apply fixture streaming update
+    </button>
+  </section>
+
+  <script src="../../dist/blazor.ssr.js" autostart="false"></script>
+  <script>
+    Blazor.addEventListener('enhancedload', function () {
+      console.log('enhancedload fired');
+    });
+
+    Blazor.start();
+  </script>
+</body>
+</html>

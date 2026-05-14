@@ -2,7 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 import { DomSynchronizer } from '../Rendering/DomSynchronizer';
-import { attachProgrammaticEnhancedNavigationHandler, handleClickForNavigationInterception, hasInteractiveRouter, isForSamePath, notifyEnhancedNavigationListeners, performScrollToElementOnTheSamePage, isSamePageWithHash } from './NavigationUtils';
+import { attachProgrammaticEnhancedNavigationHandler, handleClickForNavigationInterception, hasInteractiveRouter, isForSamePath, isHttpOrHttpsUri, isWithinBaseUriSpace, notifyEnhancedNavigationListeners, performScrollToElementOnTheSamePage, isSamePageWithHash } from './NavigationUtils';
 import { scheduleScrollReset, ScrollResetSchedule } from '../Rendering/ScrollRestoration';
 
 /*
@@ -146,7 +146,7 @@ function onDocumentSubmit(event: SubmitEvent) {
       return;
     }
 
-    const method = event.submitter?.getAttribute('formmethod') || formElem.method;
+    const method = (event.submitter?.getAttribute('formmethod') || formElem.method).toLowerCase();
     if (method === 'dialog') {
       console.warn('A form cannot be enhanced when its method is "dialog".');
       return;
@@ -158,9 +158,13 @@ function onDocumentSubmit(event: SubmitEvent) {
       return;
     }
 
+    const url = new URL(event.submitter?.getAttribute('formaction') || formElem.action, document.baseURI);
+    if (!isHttpOrHttpsUri(url.href) || !isWithinBaseUriSpace(url.href)) {
+      return;
+    }
+
     event.preventDefault();
 
-    const url = new URL(event.submitter?.getAttribute('formaction') || formElem.action, document.baseURI);
     const fetchOptions: RequestInit = { method: method};
     const formData = new FormData(formElem);
 
