@@ -1,7 +1,7 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-import { synchronizeDomContent } from '../Rendering/DomMerging/DomSync';
+import { DomSynchronizer } from '../Rendering/DomSynchronizer';
 import { attachProgrammaticEnhancedNavigationHandler, handleClickForNavigationInterception, hasInteractiveRouter, isForSamePath, notifyEnhancedNavigationListeners, performScrollToElementOnTheSamePage, isSamePageWithHash } from './NavigationUtils';
 import { scheduleScrollReset, ScrollResetSchedule } from '../Rendering/ScrollRestoration';
 
@@ -36,6 +36,7 @@ const acceptHeader = 'text/html; blazor-enhanced-nav=on';
 
 let currentEnhancedNavigationAbortController: AbortController | null;
 let navigationEnhancementCallbacks: NavigationEnhancementCallbacks;
+let domSynchronizer: DomSynchronizer;
 let performingEnhancedPageLoad: boolean;
 
 // This gets initialized to the current URL when we load.
@@ -56,8 +57,9 @@ export function hasNeverStartedAnyEnhancedPageLoad() {
   return !currentEnhancedNavigationAbortController;
 }
 
-export function attachProgressivelyEnhancedNavigationListener(callbacks: NavigationEnhancementCallbacks) {
+export function attachProgressivelyEnhancedNavigationListener(callbacks: NavigationEnhancementCallbacks, synchronizer: DomSynchronizer) {
   navigationEnhancementCallbacks = callbacks;
+  domSynchronizer = synchronizer;
   document.addEventListener('click', onDocumentClick);
   document.addEventListener('submit', onDocumentSubmit);
   window.addEventListener('popstate', onPopState);
@@ -133,10 +135,10 @@ function onDocumentSubmit(event: SubmitEvent) {
     return;
   }
 
-  // We need to be careful not to interfere with existing interactive forms. As it happens, EventDelegator always
-  // uses a capturing event handler for 'submit', so it will necessarily run before this handler, and so we won't
+  // We need to be careful not to interfere with existing interactive forms. As it happens, Blazor's interactive
+  // event infrastructure uses a capturing event handler for 'submit', so it will necessarily run before this handler, and so we won't
   // even get here if there's an interactive submit (because it will have set defaultPrevented which we check above).
-  // However if we ever change that, we would need to change this code to integrate properly with EventDelegator
+  // However if we ever change that, we would need to change this code to integrate properly with that event infrastructure
   // to make sure this handler only ever runs after interactive handlers.
   const formElem = event.target;
   if (formElem instanceof HTMLFormElement) {
@@ -309,7 +311,7 @@ export async function performEnhancedPageLoad(internalDestinationHref: string, i
       if (responseContentType?.startsWith('text/html') && initialContent) {
         // For HTML responses, regardless of the status code, display it
         const parsedHtml = new DOMParser().parseFromString(initialContent, 'text/html');
-        synchronizeDomContent(document, parsedHtml);
+        domSynchronizer.synchronizeDomContent(document, parsedHtml);
         navigationEnhancementCallbacks.documentUpdated();
       } else if (responseContentType?.startsWith('text/') && initialContent) {
         // For any other text-based content, we'll just display it, because that's what

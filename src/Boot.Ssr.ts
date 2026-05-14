@@ -4,6 +4,7 @@
 import { shouldAutoStart } from './BootCommon';
 import { enableFocusOnNavigate } from './Rendering/FocusOnNavigate';
 import { resetScrollIfNeeded, ScrollResetSchedule } from './Rendering/ScrollRestoration';
+import { ssrDomSynchronizer } from './Rendering/SsrDomMerging/SsrDomSync';
 import { attachStreamingRenderingListener } from './Rendering/StreamingRendering';
 import { NavigationEnhancementCallbacks, attachProgressivelyEnhancedNavigationListener } from './Services/NavigationEnhancement';
 import { hasProgrammaticEnhancedNavigationHandler, isWithinBaseUriSpace, performProgrammaticEnhancedNavigation, toAbsoluteUri } from './Services/NavigationUtils';
@@ -64,11 +65,11 @@ function start(options?: SsrOnlyStartOptions): Promise<void> {
   if (resolvedOptions.streaming !== false) {
     attachStreamingRenderingListener({
       disableDomPreservation: resolvedOptions.disableDomPreservation,
-    }, navigationEnhancementCallbacks);
+    }, navigationEnhancementCallbacks, ssrDomSynchronizer);
   }
 
   if (!resolvedOptions.disableDomPreservation && resolvedOptions.enhancedNavigation !== false) {
-    attachProgressivelyEnhancedNavigationListener(navigationEnhancementCallbacks);
+    attachProgressivelyEnhancedNavigationListener(navigationEnhancementCallbacks, ssrDomSynchronizer);
   }
 
   if (resolvedOptions.focusOnNavigate !== false) {

@@ -4,13 +4,15 @@
 import { SsrStartOptions } from '../Platform/SsrStartOptions';
 import { NavigationEnhancementCallbacks, hasNeverStartedAnyEnhancedPageLoad, performEnhancedPageLoad, replaceDocumentWithPlainText } from '../Services/NavigationEnhancement';
 import { isWithinBaseUriSpace, toAbsoluteUri } from '../Services/NavigationUtils';
-import { synchronizeDomContent } from './DomMerging/DomSync';
+import { DomSynchronizer } from './DomSynchronizer';
 
 let enableDomPreservation = true;
 let navigationEnhancementCallbacks: NavigationEnhancementCallbacks;
+let domSynchronizer: DomSynchronizer;
 
-export function attachStreamingRenderingListener(options: SsrStartOptions | undefined, callbacks: NavigationEnhancementCallbacks) {
+export function attachStreamingRenderingListener(options: SsrStartOptions | undefined, callbacks: NavigationEnhancementCallbacks, synchronizer: DomSynchronizer) {
   navigationEnhancementCallbacks = callbacks;
+  domSynchronizer = synchronizer;
 
   if (options?.disableDomPreservation) {
     enableDomPreservation = false;
@@ -101,7 +103,7 @@ function insertStreamingContentIntoDocument(componentIdAsString: string, docFrag
   if (markers) {
     const { startMarker, endMarker } = markers;
     if (enableDomPreservation) {
-      synchronizeDomContent({ startExclusive: startMarker, endExclusive: endMarker }, docFrag);
+      domSynchronizer.synchronizeDomContent({ startExclusive: startMarker, endExclusive: endMarker }, docFrag);
     } else {
       // In this mode we completely delete the old content before inserting the new content
       const destinationRoot = endMarker.parentNode!;
