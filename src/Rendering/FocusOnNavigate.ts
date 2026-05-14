@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 import { domFunctions } from '../DomWrapper';
-import { JSEventRegistry } from '../Services/JSEventRegistry';
 import { isForSamePath } from '../Services/NavigationUtils';
 
 const customElementName = 'blazor-focus-on-navigate';
@@ -10,7 +9,15 @@ let currentFocusOnNavigateElement: FocusOnNavigateElement | null = null;
 let locationOnLastNavigation = location.href;
 let allowApplyFocusAfterEnhancedNavigation = false;
 
-export function enableFocusOnNavigate(jsEventRegistry: JSEventRegistry) {
+interface FocusOnNavigateEvent {
+  type: string;
+}
+
+interface FocusOnNavigateEventRegistry {
+  addEventListener(type: 'enhancednavigationstart' | 'enhancednavigationend', listener: (event: FocusOnNavigateEvent) => void): void;
+}
+
+export function enableFocusOnNavigate(jsEventRegistry: FocusOnNavigateEventRegistry) {
   customElements.define(customElementName, FocusOnNavigateElement);
   jsEventRegistry.addEventListener('enhancednavigationstart', onEnhancedNavigationStart);
   jsEventRegistry.addEventListener('enhancednavigationend', onEnhancedNavigationEnd);
