@@ -19,7 +19,7 @@ import { resetScrollIfNeeded, ScrollResetSchedule } from './Rendering/Renderer';
 import { NavigationEnhancementCallbacks, attachProgressivelyEnhancedNavigationListener } from './Services/NavigationEnhancement';
 import { WebRootComponentManager } from './Services/WebRootComponentManager';
 import { hasProgrammaticEnhancedNavigationHandler, performProgrammaticEnhancedNavigation } from './Services/NavigationUtils';
-import { attachComponentDescriptorHandler, registerAllComponentDescriptors } from './Rendering/DomMerging/DomSync';
+import { attachComponentDescriptorHandler, registerAllComponentDescriptors, synchronizeDomContent } from './Rendering/DomMerging/DomSync';
 import { discoverBrowserConfiguration } from './Services/ComponentDescriptorDiscovery';
 import { JSEventRegistry } from './Services/JSEventRegistry';
 import { fetchAndInvokeInitializers } from './JSInitializers/JSInitializers.Web';
@@ -32,6 +32,8 @@ import { WebAssemblyStartOptions } from './Platform/WebAssemblyStartOptions';
 
 let started = false;
 let rootComponentManager: WebRootComponentManager;
+
+const webDomSynchronizer = { synchronizeDomContent };
 
 function boot(options?: Partial<WebStartOptions>) : Promise<void> {
   if (started) {
@@ -70,10 +72,10 @@ function boot(options?: Partial<WebStartOptions>) : Promise<void> {
   };
 
   attachComponentDescriptorHandler(rootComponentManager);
-  attachStreamingRenderingListener(options?.ssr, navigationEnhancementCallbacks);
+  attachStreamingRenderingListener(options?.ssr, navigationEnhancementCallbacks, webDomSynchronizer);
 
   if (!options?.ssr?.disableDomPreservation) {
-    attachProgressivelyEnhancedNavigationListener(navigationEnhancementCallbacks);
+    attachProgressivelyEnhancedNavigationListener(navigationEnhancementCallbacks, webDomSynchronizer);
   }
 
   enableFocusOnNavigate(jsEventRegistry);
