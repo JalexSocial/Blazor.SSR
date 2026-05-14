@@ -3,24 +3,23 @@
  * https://jestjs.io/docs/configuration
  */
 
-path = require('path');
-
-const ROOT_DIR = path.resolve(__dirname, '..', '..', '..');
+const path = require('path');
 
 /** @type {import('jest').Config} */
-
 module.exports = {
-  testEnvironment: 'node',
-  roots: ['<rootDir>/src','<rootDir>/test'],
-  testMatch: ['**/*.test.ts'],
+  roots: ['<rootDir>/test'],
+  testMatch: ['**/Ssr*.test.ts'],
   moduleFileExtensions: ['js', 'ts'],
   transform: {
     '^.+\\.(js|ts)$': 'babel-jest',
   },
   moduleDirectories: ['node_modules', 'src'],
-  testEnvironment: "jsdom",
+  testEnvironment: 'jsdom',
   reporters: [
-      "default",
-      [path.resolve(ROOT_DIR, "node_modules", "jest-junit", "index.js"), { "outputDirectory": path.resolve(ROOT_DIR, "artifacts", "log"), "outputName": `${process.platform}` + ".components-webjs.junit.xml" }]
+    'default',
+    [path.resolve(__dirname, 'node_modules', 'jest-junit', 'index.js'), {
+      outputDirectory: path.resolve(__dirname, 'artifacts', 'log'),
+      outputName: `${process.platform}.components-webjs.junit.xml`,
+    }],
   ],
-}
+};

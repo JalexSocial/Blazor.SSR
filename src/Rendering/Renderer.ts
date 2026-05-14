@@ -7,19 +7,14 @@ import { RenderBatch } from './RenderBatch/RenderBatch';
 import { BrowserRenderer } from './BrowserRenderer';
 import { toLogicalElement, LogicalElement } from './LogicalElements';
 import { getAndRemovePendingRootComponentContainer } from './JSRootComponents';
+import { resetScrollIfNeeded, ScrollResetSchedule } from './ScrollRestoration';
+export { resetScrollIfNeeded, scheduleScrollReset, ScrollResetSchedule } from './ScrollRestoration';
 
 interface BrowserRendererRegistry {
   [browserRendererId: number]: BrowserRenderer;
 }
 
-export enum ScrollResetSchedule {
-  None,
-  AfterBatch, // Reset scroll after interactive components finish rendering (interactive navigation)
-  AfterDocumentUpdate, // Reset scroll after enhanced navigation updates the DOM (enhanced navigation)
-}
-
 const browserRenderers: BrowserRendererRegistry = {};
-let pendingScrollResetTiming: ScrollResetSchedule = ScrollResetSchedule.None;
 
 export function attachRootComponentToLogicalElement(browserRendererId: number, logicalElement: LogicalElement, componentId: number, appendContent: boolean): void {
   let browserRenderer = browserRenderers[browserRendererId];
@@ -96,27 +91,4 @@ export function renderBatch(browserRendererId: number, batch: RenderBatch): void
   }
 
   resetScrollIfNeeded(ScrollResetSchedule.AfterBatch);
-}
-
-export function scheduleScrollReset(timing: ScrollResetSchedule): void {
-  if (timing !== ScrollResetSchedule.AfterBatch) {
-    pendingScrollResetTiming = timing;
-    return;
-  }
-
-  if (pendingScrollResetTiming !== ScrollResetSchedule.AfterDocumentUpdate) {
-    pendingScrollResetTiming = ScrollResetSchedule.AfterBatch;
-  }
-}
-
-export function resetScrollIfNeeded(triggerTiming: ScrollResetSchedule) {
-  if (pendingScrollResetTiming !== triggerTiming) {
-    return;
-  }
-
-  pendingScrollResetTiming = ScrollResetSchedule.None;
-
-  // This assumes the scroller is on the window itself. There isn't a general way to know
-  // if some other element is playing the role of the primary scroll region.
-  window.scrollTo && window.scrollTo(0, 0);
 }

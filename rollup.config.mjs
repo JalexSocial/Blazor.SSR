@@ -1,36 +1,48 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
-import createBaseConfig from '../Shared.JS/rollup.config.mjs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import alias from '@rollup/plugin-alias';
+import { babel } from '@rollup/plugin-babel';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const environment = process.env.NODE_ENV || process.env.ROLLUP_WATCH || 'development';
+const isProduction = environment === 'production';
+const outputDir = path.join(__dirname, 'dist', isProduction ? 'Release' : 'Debug');
 
-export default createBaseConfig({
-  inputOutputMap: {
-    'blazor.server': './src/Boot.Server.ts',
-    'blazor.web': './src/Boot.Web.ts',
-    'blazor.webassembly': './src/Boot.WebAssembly.ts',
-    'blazor.webview': './src/Boot.WebView.ts',
+export default {
+  input: path.join(__dirname, 'src/Boot.Ssr.ts'),
+  output: {
+    file: path.join(outputDir, 'blazor.ssr.js'),
+    format: 'iife',
+    sourcemap: true,
   },
-  dir: __dirname,
-  updateConfig: (config, environment, output, input) => {
-    config.plugins.push({
-      name: 'Resolve dotnet.js dynamic import',
-      resolveDynamicImport(source, importer) {
-        if (source === './dotnet.js') {
-          return { id: './dotnet.js', moduleSideEffects: false, external: 'relative' };
-        }
-        return null;
-      }
-    });
-
-    if (input.includes("WebView")) {
-      config.output.sourcemap = 'inline';
-    } else if (environment === 'production' && (output === 'blazor.web' || output === 'blazor.webassembly')) {
-      // Generate sourcemaps but don't emit sourcemap link comments for production bundles
-      config.output.sourcemap = 'hidden';
-    } else {
-      config.output.sourcemap = true;
-    }
-  }
-});
+  plugins: [
+    alias({
+      entries: [
+        // Temporary SSR-build aliases. DomSync still has interactive descriptor hooks that
+        // are documented as follow-up cleanup in docs/ssr-runtime-dependency-notes.md.
+        {
+          find: '../../Services/ComponentDescriptorDiscovery',
+          replacement: path.join(__dirname, 'src/BuildStubs/ComponentDescriptorDiscovery.SsrBuild.ts'),
+        },
+        {
+          find: '../Services/ComponentDescriptorDiscovery',
+          replacement: path.join(__dirname, 'src/BuildStubs/ComponentDescriptorDiscovery.SsrBuild.ts'),
+        },
+        {
+          find: '../BrowserRenderer',
+          replacement: path.join(__dirname, 'src/BuildStubs/BrowserRenderer.SsrBuild.ts'),
+        },
+      ],
+    }),
+    nodeResolve({
+      extensions: ['.ts', '.js'],
+    }),
+    babel({
+      babelHelpers: 'bundled',
+      extensions: ['.ts', '.js'],
+      include: ['src/**/*.ts'],
+    }),
+  ],
+};
