@@ -11,14 +11,15 @@
   "scripts": {
     "clean": "node scripts/clean.mjs",
     "prebuild": "npm run clean",
-    "lint": "eslint -c ./src/.eslintrc.js src/Boot.Ssr.ts src/Services/SsrEventRegistry.ts src/Rendering/ScrollRestoration.ts src/BuildStubs/*.ts",
+    "lint": "eslint -c ./src/.eslintrc.js src/Boot.Ssr.ts src/Services/SsrEventRegistry.ts src/Rendering/ScrollRestoration.ts src/Rendering/DomSynchronizer.ts src/Rendering/SsrDomMerging/*.ts src/BuildStubs/*.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:debug": "node --nolazy --inspect-brk ./node_modules/jest/bin/jest.js --runInBand --colors --verbose",
     "build": "npm run build:debug && npm run build:production",
     "build:debug": "rollup -c --environment NODE_ENV:development",
     "build:production": "rollup -c --environment NODE_ENV:production",
-    "verify:toolchain": "npm run build && npm test && npm run lint"
+    "verify:toolchain": "npm run build && npm test && npm run lint && npm run check:ssr-boundary",
+    "check:ssr-boundary": "node scripts/check-ssr-boundary.mjs"
   },
   "devDependencies": {
     "@babel/core": "^7.28.5",

@@ -173,7 +173,7 @@ class ItemListSubset<T> implements ItemList<T> {
     return this.source.item(index + this.startIndex);
   }
 
-  forEach(callbackfn: (value: T, key: number, parent: ItemList<T>) => void, thisArg?: any): void {
+  forEach(callbackfn: (value: T, key: number, parent: ItemList<T>) => void, _thisArg?: any): void {
     for (let i = 0; i < this.length; i++) {
       callbackfn(this.item(i)!, i, this);
     }

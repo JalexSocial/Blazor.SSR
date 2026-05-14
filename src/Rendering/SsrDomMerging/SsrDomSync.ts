@@ -251,7 +251,7 @@ function findSsrStreamingMarkers(destinationDocument: Document, componentId: str
   let startMarker: Comment | null = null;
   let current: Comment | null;
 
-  while (current = iterator.nextNode() as Comment | null) {
+  while ((current = iterator.nextNode() as Comment | null)) {
     if (current.textContent === expectedStartText) {
       startMarker = current;
       break;
@@ -262,7 +262,7 @@ function findSsrStreamingMarkers(destinationDocument: Document, componentId: str
     return null;
   }
 
-  while (current = iterator.nextNode() as Comment | null) {
+  while ((current = iterator.nextNode() as Comment | null)) {
     if (current.textContent === expectedEndText) {
       return { startExclusive: startMarker, endExclusive: current };
     }
@@ -289,8 +289,11 @@ class DomNodeEditWalker {
 
 class SiblingSubsetNodeList implements ItemList<Node> {
   private readonly siblings: ItemList<Node>;
+
   private readonly startIndex: number;
+
   private readonly endIndexExcl: number;
+
   readonly length: number;
 
   constructor(childNodes: ItemList<Node>, range: CommentBoundedRange) {
