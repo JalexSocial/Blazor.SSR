@@ -7,7 +7,7 @@ import { resetScrollIfNeeded, ScrollResetSchedule } from './Rendering/ScrollRest
 import { ssrDomSynchronizer } from './Rendering/SsrDomMerging/SsrDomSync';
 import { attachStreamingRenderingListener } from './Rendering/StreamingRendering';
 import { NavigationEnhancementCallbacks, attachProgressivelyEnhancedNavigationListener } from './Services/NavigationEnhancement';
-import { hasProgrammaticEnhancedNavigationHandler, isWithinBaseUriSpace, performProgrammaticEnhancedNavigation, toAbsoluteUri } from './Services/NavigationUtils';
+import { hasProgrammaticEnhancedNavigationHandler, isHttpOrHttpsUri, isWithinBaseUriSpace, performProgrammaticEnhancedNavigation, toAbsoluteUri } from './Services/NavigationUtils';
 import { SsrEventMap, SsrEventRegistry } from './Services/SsrEventRegistry';
 
 export interface SsrOnlyStartOptions {
@@ -19,13 +19,14 @@ export interface SsrOnlyStartOptions {
 
 interface SsrOnlyBlazorGlobal {
   start: (options?: SsrOnlyStartOptions) => Promise<void>;
-  navigateTo: (uri: string, options?: SsrOnlyNavigationOptions) => void;
+  navigateTo: (uri: string, options?: SsrOnlyNavigationOptions | boolean) => void;
   addEventListener: typeof SsrEventRegistry.prototype.addEventListener;
   removeEventListener: typeof SsrEventRegistry.prototype.removeEventListener;
 }
 
 export interface SsrOnlyNavigationOptions {
   forceLoad?: boolean;
+  replace?: boolean;
   replaceHistoryEntry?: boolean;
 }
 
@@ -76,14 +77,18 @@ function start(options?: SsrOnlyStartOptions): Promise<void> {
     enableFocusOnNavigate(ssrEventRegistry);
   }
 
+  warnIfInteractiveMarkersArePresent();
+
   return Promise.resolve();
 }
 
-function navigateTo(uri: string, options?: SsrOnlyNavigationOptions): void {
+function navigateTo(uri: string, options?: SsrOnlyNavigationOptions | boolean): void {
   const absoluteUri = toAbsoluteUri(uri);
+  const normalizedOptions = normalizeNavigationOptions(options);
+  const replace = normalizedOptions.replace || normalizedOptions.replaceHistoryEntry || false;
 
-  if (options?.forceLoad || !isWithinBaseUriSpace(absoluteUri) || !hasProgrammaticEnhancedNavigationHandler()) {
-    if (options?.replaceHistoryEntry) {
+  if (normalizedOptions.forceLoad || !isHttpOrHttpsUri(absoluteUri) || !isWithinBaseUriSpace(absoluteUri) || !hasProgrammaticEnhancedNavigationHandler()) {
+    if (replace) {
       location.replace(absoluteUri);
     } else {
       location.href = absoluteUri;
@@ -92,11 +97,34 @@ function navigateTo(uri: string, options?: SsrOnlyNavigationOptions): void {
     return;
   }
 
-  performProgrammaticEnhancedNavigation(absoluteUri, options?.replaceHistoryEntry || false);
+  performProgrammaticEnhancedNavigation(absoluteUri, replace);
+}
+
+function normalizeNavigationOptions(options?: SsrOnlyNavigationOptions | boolean): SsrOnlyNavigationOptions {
+  if (typeof options === 'boolean') {
+    return { forceLoad: options };
+  }
+
+  return options || {};
 }
 
 function dispatchSsrEvent<K extends keyof SsrEventMap>(type: K, ev: Omit<SsrEventMap[K], 'type'>): void {
   ssrEventRegistry.dispatchEvent(type, ev);
+}
+
+function warnIfInteractiveMarkersArePresent(): void {
+  const interactiveMarkerPattern = /\\?"type\\?"\s*:\s*\\?"(server|webassembly|auto)\\?"/i;
+  const iterator = document.createNodeIterator(document, NodeFilter.SHOW_COMMENT);
+  let node = iterator.nextNode() as Comment | null;
+
+  while (node) {
+    if (node.textContent?.includes('Blazor:') && interactiveMarkerPattern.test(node.textContent)) {
+      console.warn('This page appears to contain interactive Blazor component markers, but only the static SSR runtime is loaded. Interactive components will not be activated.');
+      return;
+    }
+
+    node = iterator.nextNode() as Comment | null;
+  }
 }
 
 if (shouldAutoStart()) {

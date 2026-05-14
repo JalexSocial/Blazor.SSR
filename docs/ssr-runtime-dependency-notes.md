@@ -77,3 +77,9 @@ The SSR-only DOM synchronization path intentionally does **not** support or impo
 - The SSR-only merge intentionally does not parse or activate interactive component descriptors. Server/WebAssembly/Auto component comments are treated as ordinary comments or ordinary DOM and are not converted into logical elements.
 - Script elements are synchronized as DOM nodes and attributes, including `integrity`, but the SSR-only synchronizer does not add an extra script re-execution framework. This matches the goal of avoiding an additional runtime framework in the static SSR extraction and should remain under validation against Blazor enhanced navigation expectations.
 - The dependency-boundary check is source-graph based. It is designed to catch accidental imports and obvious forbidden references in the `Boot.Ssr.ts` path, not to replace bundle auditing or browser-level end-to-end tests.
+
+## Prompt 3 verification additions
+
+The verification pass also checks the generated bundle, not only the static TypeScript import graph. `npm run check:ssr-bundle` expects `npm run build` to have produced `dist/blazor.ssr.js` and `dist/blazor.ssr.min.js`, then scans the bundle contents for known interactive-only runtime terms and confirms required static SSR protocol strings are present.
+
+The boundary and bundle checks intentionally focus on runtime source and generated bundle output. Documentation files may mention excluded terms such as `InteractiveServer`, `DotNet`, or SignalR when explaining what the runtime does not support.
