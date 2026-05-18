@@ -3,6 +3,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 import fs from 'node:fs';
+import { gzipSync } from 'node:zlib';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -54,6 +55,7 @@ const expectedSsrTerms = [
 
 const findings = [];
 const missingExpectedTerms = [];
+const bundleResults = [];
 
 for (const relativeFile of bundleFiles) {
   const file = path.join(repoRoot, relativeFile);
@@ -62,23 +64,43 @@ for (const relativeFile of bundleFiles) {
     continue;
   }
 
-  const content = stripComments(fs.readFileSync(file, 'utf8'));
-  for (const term of forbiddenRuntimeTerms) {
-    if (content.includes(term)) {
-      findings.push(`${relativeFile}: forbidden runtime term '${term}'`);
+  const rawContent = fs.readFileSync(file);
+  const content = stripComments(rawContent.toString('utf8'));
+  const forbiddenResults = forbiddenRuntimeTerms.map(term => ({ term, present: content.includes(term) }));
+  const expectedResults = expectedSsrTerms.map(term => ({ term, present: content.includes(term) }));
+
+  for (const result of forbiddenResults) {
+    if (result.present) {
+      findings.push(`${relativeFile}: forbidden runtime term '${result.term}'`);
     }
   }
 
-  for (const term of expectedSsrTerms) {
-    if (!content.includes(term)) {
-      missingExpectedTerms.push(`${relativeFile}: missing expected SSR string '${term}'`);
+  for (const result of expectedResults) {
+    if (!result.present) {
+      missingExpectedTerms.push(`${relativeFile}: missing expected SSR string '${result.term}'`);
     }
   }
+
+  bundleResults.push({
+    relativeFile,
+    rawBytes: rawContent.length,
+    gzipBytes: gzipSync(rawContent).length,
+    forbiddenResults,
+    expectedResults,
+  });
 }
 
 console.log('SSR bundle audit');
-for (const relativeFile of bundleFiles) {
-  console.log(` - ${relativeFile}`);
+for (const result of bundleResults) {
+  console.log(` - ${result.relativeFile}: ${result.rawBytes} bytes (${result.gzipBytes} bytes gzip)`);
+  console.log('   Forbidden runtime terms:');
+  for (const termResult of result.forbiddenResults) {
+    console.log(`    ${termResult.present ? 'FAIL' : 'PASS'} ${termResult.term}`);
+  }
+  console.log('   Expected SSR protocol strings:');
+  for (const termResult of result.expectedResults) {
+    console.log(`    ${termResult.present ? 'PASS' : 'FAIL'} ${termResult.term}`);
+  }
 }
 
 if (findings.length > 0) {
