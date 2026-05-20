@@ -1,0 +1,84 @@
+@page "/ssr-demo/preservation"
+
+<PageTitle>SSR DOM Preservation Demo</PageTitle>
+
+<div class="container py-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <span class="badge text-bg-primary mb-2">DOM preservation</span>
+            <h1 class="h2 mb-1">DOM preservation demo</h1>
+            <p class="text-secondary mb-0">Compare a preserved local island with ordinary server-rendered DOM replacement.</p>
+        </div>
+        <a class="btn btn-outline-secondary" href="/ssr-demo">Back to SSR demos</a>
+    </div>
+
+    <SsrDemoProbe />
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div id="ssr-demo-preserved-notes" data-permanent class="card border-success shadow-sm h-100">
+                <div class="card-header bg-success-subtle">
+                    Preserved local DOM island
+                </div>
+                <div class="card-body">
+                    <p class="text-secondary">
+                        Add notes here, then navigate with the enhanced links below. This island should keep its locally changed DOM because it has
+                        a stable <code>id</code> and <code>data-permanent</code>.
+                    </p>
+
+                    <div class="input-group mb-3">
+                        <input id="permanent-note-input" class="form-control" placeholder="Type a local-only note" />
+                        <button type="button" class="btn btn-success" onclick="window.ssrDemoProbe?.addNote('permanent-note-input', 'permanent-note-list')">Add</button>
+                    </div>
+
+                    <ul id="permanent-note-list" class="mb-0">
+                        <li>Initial preserved note rendered by the server.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-body-tertiary">
+                    Ordinary replaced DOM
+                </div>
+                <div class="card-body">
+                    <p class="text-secondary">
+                        This card is ordinary server-rendered DOM. Its timestamp should update when enhanced navigation replaces the page content.
+                    </p>
+                    <div class="display-6 fw-semibold">@RenderedAt.ToString("HH:mm:ss.fff")</div>
+                    <p class="small text-secondary mb-0">Request stamp: <code>@RequestStamp</code></p>
+
+                    <hr />
+
+                    <label class="form-label" for="non-preserved-input">Non-preserved browser input</label>
+                    <input id="non-preserved-input" class="form-control" placeholder="Type here, then navigate. This should reset." />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-body-tertiary">Preservation tests</div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-primary" href="@SelfNavigationUrl">Enhanced self navigation</a>
+                <a class="btn btn-outline-primary" href="/ssr-demo/enhanced-navigation">Navigate to enhanced navigation</a>
+                <a class="btn btn-outline-primary" href="/ssr-demo/preservation#bottom-target">Jump to fragment</a>
+                <a class="btn btn-outline-danger" data-enhance-nav="false" href="@FullReloadUrl">Full reload opt out</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="bottom-target" class="alert alert-light border mt-5 mb-0">
+        Fragment target for local hash navigation.
+    </div>
+</div>
+
+@code {
+    private readonly DateTimeOffset RenderedAt = DateTimeOffset.Now;
+    private readonly string RequestStamp = Guid.NewGuid().ToString("N").Substring(0, 12);
+    private readonly string SelfNavigationUrl = "/ssr-demo/preservation?round=" + Guid.NewGuid().ToString("N");
+    private readonly string FullReloadUrl = "/ssr-demo/preservation?reload=" + Guid.NewGuid().ToString("N");
+}

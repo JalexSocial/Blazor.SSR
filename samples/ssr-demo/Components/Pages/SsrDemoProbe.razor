@@ -1,0 +1,34 @@
+<div id="ssr-demo-probe-panel" data-permanent class="card border-info-subtle shadow-sm my-4">
+    <div class="card-header bg-info-subtle d-flex align-items-center justify-content-between gap-2">
+        <div>
+            <strong>SSR runtime probe</strong>
+            <span id="ssr-demo-probe-status" class="badge text-bg-secondary ms-2">Not initialized</span>
+        </div>
+        <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-outline-secondary" onclick="window.ssrDemoProbe?.log('manual-ping', { href: location.href })">Ping</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="window.ssrDemoProbe?.clear()">Clear</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="small text-secondary">Blazor facade</div>
+                <div id="ssr-demo-blazor-status" class="fw-semibold">Unknown</div>
+            </div>
+            <div class="col-md-4">
+                <div class="small text-secondary">Last event</div>
+                <div id="ssr-demo-last-event" class="fw-semibold">None yet</div>
+            </div>
+            <div class="col-md-4">
+                <div class="small text-secondary">Current URL</div>
+                <div id="ssr-demo-current-url" class="text-break small">Unknown</div>
+            </div>
+        </div>
+        <hr />
+        <ol id="ssr-demo-event-log" class="small mb-0" style="max-height: 12rem; overflow:auto;">
+            <li class="text-secondary">No runtime events captured yet. Hard refresh this page if the probe was first reached by enhanced navigation.</li>
+        </ol>
+    </div>
+</div>
+
+<script src="/ssr-demo-probe.js" suppress-error="BL9992"></script>

@@ -1,0 +1,83 @@
+@page "/ssr-demo/enhanced-navigation"
+
+<PageTitle>SSR Enhanced Navigation Demo</PageTitle>
+
+<div class="container py-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <span class="badge text-bg-primary mb-2">Enhanced navigation</span>
+            <h1 class="h2 mb-1">Enhanced navigation demo</h1>
+            <p class="text-secondary mb-0">Use these links to verify that same-origin navigation is fetched, patched, and recorded without a full page load.</p>
+        </div>
+        <a class="btn btn-outline-secondary" href="/ssr-demo">Back to SSR demos</a>
+    </div>
+
+    <SsrDemoProbe />
+
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-body-tertiary">
+                    Server-rendered request identity
+                </div>
+                <div class="card-body">
+                    <p>
+                        This card is generated on the server for each request. With enhanced navigation, the document body should be patched
+                        and this value should change without the browser doing a traditional full reload.
+                    </p>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Request stamp</dt>
+                        <dd class="col-sm-8"><code>@RequestStamp</code></dd>
+
+                        <dt class="col-sm-4">Rendered at</dt>
+                        <dd class="col-sm-8">@RenderedAt.ToString("HH:mm:ss.fff")</dd>
+
+                        <dt class="col-sm-4">Expected runtime behavior</dt>
+                        <dd class="col-sm-8">Enhanced navigation start, DOM update, enhanced load, enhanced navigation end.</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div id="enhanced-nav-permanent-card" data-permanent class="card border-success shadow-sm h-100">
+                <div class="card-header bg-success-subtle">
+                    <code>data-permanent</code> island
+                </div>
+                <div class="card-body">
+                    <p class="text-secondary">
+                        This counter is changed by normal browser JavaScript. It should survive enhanced navigation because the wrapper has
+                        <code>id="enhanced-nav-permanent-card"</code> and <code>data-permanent</code>.
+                    </p>
+                    <div class="display-6 fw-semibold" id="enhanced-nav-count">0</div>
+                    <button type="button" class="btn btn-success mt-3" onclick="window.ssrDemoProbe?.incrementText('enhanced-nav-count')">Increment preserved counter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-body-tertiary">Navigation targets</div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-primary" href="@SamePageUrl">Same page with new query</a>
+                <a class="btn btn-outline-primary" href="/ssr-demo/routing/bravo?filter=enhanced&page=3&showDetails=true">Route plus query parameters</a>
+                <a class="btn btn-outline-primary" href="/ssr-demo/streaming">Streaming page</a>
+                <a class="btn btn-outline-primary" href="/ssr-demo/enhanced-navigation#fragment-target">Local hash target</a>
+                <a class="btn btn-outline-danger" data-enhance-nav="false" href="@FullReloadUrl">Opt out with data-enhance-nav=false</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="fragment-target" class="alert alert-light border mt-5">
+        <h2 class="h5">Fragment target</h2>
+        <p class="mb-0">The hash link should scroll here while keeping the rest of the enhanced navigation behavior intact.</p>
+    </div>
+</div>
+
+@code {
+    private readonly string RequestStamp = Guid.NewGuid().ToString("N").Substring(0, 12);
+    private readonly string SamePageUrl = "/ssr-demo/enhanced-navigation?round=" + Guid.NewGuid().ToString("N");
+    private readonly string FullReloadUrl = "/ssr-demo/enhanced-navigation?fullReload=" + Guid.NewGuid().ToString("N");
+    private readonly DateTimeOffset RenderedAt = DateTimeOffset.Now;
+}

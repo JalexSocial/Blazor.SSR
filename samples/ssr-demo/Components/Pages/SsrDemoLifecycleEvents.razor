@@ -1,0 +1,64 @@
+@page "/ssr-demo/events"
+
+<PageTitle>SSR Lifecycle Events Demo</PageTitle>
+
+<div class="container py-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <span class="badge text-bg-primary mb-2">Lifecycle events</span>
+            <h1 class="h2 mb-1">Lifecycle events demo</h1>
+            <p class="text-secondary mb-0">This page validates the <code>Blazor.addEventListener</code> compatibility surface exposed by <code>blazor.ssr.js</code>.</p>
+        </div>
+        <a class="btn btn-outline-secondary" href="/ssr-demo">Back to SSR demos</a>
+    </div>
+
+    <SsrDemoProbe />
+
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-body-tertiary">Event sequence to verify</div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li>Hard refresh this page once to install the probe script.</li>
+                        <li>Use the links below. The probe should capture <code>enhancednavigationstart</code>.</li>
+                        <li>The body should patch without a full page reload.</li>
+                        <li>The probe should capture <code>enhancedload</code> and <code>enhancednavigationend</code>.</li>
+                        <li>Use the browser Back and Forward buttons to verify history integration.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-body-tertiary">Current server render</div>
+                <div class="card-body">
+                    <p class="text-secondary">This value changes each time the server renders the route.</p>
+                    <div class="display-6 fw-semibold">@RenderedAt.ToString("HH:mm:ss.fff")</div>
+                    <p class="small text-secondary mb-0">Request stamp: <code>@RequestStamp</code></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-body-tertiary">Trigger navigation events</div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-primary" href="@SamePageUrl">Same page enhanced navigation</a>
+                <a class="btn btn-outline-primary" href="/ssr-demo/streaming">Streaming route</a>
+                <a class="btn btn-outline-primary" href="/ssr-demo/forms">Forms route</a>
+                <a class="btn btn-outline-primary" href="/ssr-demo/preservation">Preservation route</a>
+                <a class="btn btn-outline-danger" data-enhance-nav="false" href="@FullReloadUrl">Opt out full reload</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly DateTimeOffset RenderedAt = DateTimeOffset.Now;
+    private readonly string RequestStamp = Guid.NewGuid().ToString("N").Substring(0, 12);
+    private readonly string SamePageUrl = "/ssr-demo/events?round=" + Guid.NewGuid().ToString("N");
+    private readonly string FullReloadUrl = "/ssr-demo/events?fullReload=" + Guid.NewGuid().ToString("N");
+}

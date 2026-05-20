@@ -1,0 +1,150 @@
+@page "/ssr-demo/streaming"
+@attribute [StreamRendering(true)]
+
+<PageTitle>SSR Streaming Rendering Demo</PageTitle>
+
+<div class="container py-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <span class="badge text-bg-primary mb-2">Streaming rendering</span>
+            <h1 class="h2 mb-1">Streaming rendering demo</h1>
+            <p class="text-secondary mb-0">This route intentionally delays data so the runtime must process streamed SSR patches.</p>
+        </div>
+        <a class="btn btn-outline-secondary" href="/ssr-demo">Back to SSR demos</a>
+    </div>
+
+    <SsrDemoProbe />
+
+    <div class="alert alert-info">
+        Initial HTML should arrive with placeholders. The cards below should fill in progressively as the response stream produces SSR updates.
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-body-tertiary">Phase 1</div>
+                <div class="card-body">
+                    @if (PhaseOneComplete)
+                    {
+                        <span class="badge text-bg-success mb-2">Complete</span>
+                        <h2 class="h5">Configuration loaded</h2>
+                        <p class="mb-0">The first delayed render completed at @PhaseOneCompletedAt?.ToString("HH:mm:ss.fff").</p>
+                    }
+                    else
+                    {
+                        <div class="placeholder-glow">
+                            <span class="placeholder col-7"></span>
+                            <span class="placeholder col-4"></span>
+                            <span class="placeholder col-9"></span>
+                        </div>
+                        <p class="text-secondary mt-3 mb-0">Waiting for first streamed update...</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-body-tertiary">Phase 2</div>
+                <div class="card-body">
+                    @if (Metrics is not null)
+                    {
+                        <span class="badge text-bg-success mb-2">Complete</span>
+                        <h2 class="h5">Metrics loaded</h2>
+                        <ul class="list-group list-group-flush">
+                            @foreach (var metric in Metrics)
+                            {
+                                <li class="list-group-item d-flex justify-content-between px-0">
+                                    <span>@metric.Label</span>
+                                    <strong>@metric.Value</strong>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <div class="placeholder-glow">
+                            <span class="placeholder col-12"></span>
+                            <span class="placeholder col-10"></span>
+                            <span class="placeholder col-8"></span>
+                        </div>
+                        <p class="text-secondary mt-3 mb-0">Waiting for second streamed update...</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-body-tertiary">Phase 3</div>
+                <div class="card-body">
+                    @if (Complete)
+                    {
+                        <span class="badge text-bg-success mb-2">Complete</span>
+                        <h2 class="h5">Final patch received</h2>
+                        <p>The server completed the streamed render at @CompletedAt?.ToString("HH:mm:ss.fff").</p>
+                        <a class="btn btn-primary" href="/ssr-demo/enhanced-navigation">Navigate away and back</a>
+                    }
+                    else
+                    {
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading</span>
+                        </div>
+                        <p class="text-secondary mt-3 mb-0">Waiting for final streamed update...</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-body-tertiary">Render log</div>
+        <div class="card-body">
+            <ol class="mb-0">
+                @foreach (var entry in RenderLog)
+                {
+                    <li><strong>@entry.When.ToString("HH:mm:ss.fff")</strong> - @entry.Message</li>
+                }
+            </ol>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool PhaseOneComplete;
+    private DateTimeOffset? PhaseOneCompletedAt;
+    private IReadOnlyList<Metric>? Metrics;
+    private bool Complete;
+    private DateTimeOffset? CompletedAt;
+    private readonly List<RenderEntry> RenderLog = new List<RenderEntry>
+    {
+        new RenderEntry(DateTimeOffset.Now, "Initial placeholder render started.")
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(700);
+        PhaseOneComplete = true;
+        PhaseOneCompletedAt = DateTimeOffset.Now;
+        RenderLog.Add(new RenderEntry(DateTimeOffset.Now, "Phase 1 data became available."));
+        StateHasChanged();
+
+        await Task.Delay(900);
+        Metrics = new[]
+        {
+            new Metric("SSR patches", "3"),
+            new Metric("Navigation mode", "Enhanced"),
+            new Metric("Runtime", "blazor.ssr.js")
+        };
+        RenderLog.Add(new RenderEntry(DateTimeOffset.Now, "Phase 2 metrics became available."));
+        StateHasChanged();
+
+        await Task.Delay(800);
+        Complete = true;
+        CompletedAt = DateTimeOffset.Now;
+        RenderLog.Add(new RenderEntry(DateTimeOffset.Now, "Final streamed render completed."));
+    }
+
+    private sealed record Metric(string Label, string Value);
+    private sealed record RenderEntry(DateTimeOffset When, string Message);
+}

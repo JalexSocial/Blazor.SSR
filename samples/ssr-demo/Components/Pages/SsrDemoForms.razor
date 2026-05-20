@@ -1,0 +1,203 @@
+@page "/ssr-demo/forms"
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Forms
+@attribute [StreamRendering(true)]
+
+<PageTitle>SSR Enhanced Forms Demo</PageTitle>
+
+<div class="container py-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <span class="badge text-bg-primary mb-2">Enhanced forms</span>
+            <h1 class="h2 mb-1">Enhanced form handling demo</h1>
+            <p class="text-secondary mb-0">Submit these forms to verify enhanced POST handling, form names, antiforgery, validation, and streamed POST updates.</p>
+        </div>
+        <a class="btn btn-outline-secondary" href="/ssr-demo">Back to SSR demos</a>
+    </div>
+
+    <SsrDemoProbe />
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <EditForm Model="Feedback" OnValidSubmit="SubmitFeedback" OnInvalidSubmit="InvalidFeedback" FormName="ssr-demo-feedback" Enhance class="card shadow-sm h-100">
+                <DataAnnotationsValidator />
+                <div class="card-header bg-body-tertiary">
+                    Enhanced <code>EditForm</code>
+                </div>
+                <div class="card-body">
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <label class="form-label" for="feedback-name">Name</label>
+                        <InputText id="feedback-name" class="form-control" @bind-Value="Feedback!.Name" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="feedback-rating">Runtime confidence</label>
+                        <InputSelect id="feedback-rating" class="form-select" @bind-Value="Feedback!.Rating">
+                            <option value="1">1 - failing</option>
+                            <option value="2">2 - partial</option>
+                            <option value="3">3 - uncertain</option>
+                            <option value="4">4 - mostly working</option>
+                            <option value="5">5 - working</option>
+                        </InputSelect>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="feedback-notes">Notes</label>
+                        <InputTextArea id="feedback-notes" class="form-control" rows="4" @bind-Value="Feedback!.Notes" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Submit enhanced EditForm</button>
+                </div>
+                <div class="card-footer bg-body">
+                    @if (FeedbackSubmitted)
+                    {
+                        <div class="alert alert-success mb-0">
+                            Valid enhanced <code>EditForm</code> POST processed at @FeedbackSubmittedAt?.ToString("HH:mm:ss.fff").
+                            Rating: <strong>@Feedback?.Rating</strong>.
+                        </div>
+                    }
+                    else if (FeedbackInvalid)
+                    {
+                        <div class="alert alert-warning mb-0">
+                            Invalid enhanced <code>EditForm</code> POST processed at @FeedbackSubmittedAt?.ToString("HH:mm:ss.fff").
+                        </div>
+                    }
+                    else
+                    {
+                        <span class="text-secondary">No enhanced EditForm post processed yet.</span>
+                    }
+                </div>
+            </EditForm>
+        </div>
+
+        <div class="col-lg-6">
+            <form method="post" @onsubmit="SubmitPlainForm" @formname="ssr-demo-plain-html" data-enhance="true" class="card shadow-sm h-100">
+                <AntiforgeryToken />
+                <div class="card-header bg-body-tertiary">
+                    Enhanced plain HTML form
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="plain-email">Email</label>
+                        <input id="plain-email" class="form-control" name="Plain.Email" value="@Plain?.Email" placeholder="teacher@example.org" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="plain-intent">Intent</label>
+                        <select id="plain-intent" class="form-select" name="Plain.Intent">
+                            <option value="navigation">Navigation behavior</option>
+                            <option value="streaming">Streaming behavior</option>
+                            <option value="forms">Form behavior</option>
+                            <option value="dom">DOM preservation</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="plain-message">Message</label>
+                        <textarea id="plain-message" class="form-control" rows="4" name="Plain.Message">@Plain?.Message</textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-outline-primary">Submit enhanced HTML form</button>
+                </div>
+                <div class="card-footer bg-body">
+                    @if (PlainSubmitted)
+                    {
+                        <div class="alert alert-success mb-0">
+                            Plain HTML form POST processed at @PlainSubmittedAt?.ToString("HH:mm:ss.fff").
+                            Intent: <strong>@Plain?.Intent</strong>.
+                        </div>
+                    }
+                    else
+                    {
+                        <span class="text-secondary">No enhanced plain HTML form post processed yet.</span>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (FeedbackSubmitted || FeedbackInvalid || PlainSubmitted)
+    {
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-body-tertiary">Server-side postback summary</div>
+            <div class="card-body">
+                <pre class="mb-0"><code>@PostSummary</code></pre>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [SupplyParameterFromForm(FormName = "ssr-demo-feedback")]
+    private FeedbackModel? Feedback { get; set; }
+
+    [SupplyParameterFromForm(FormName = "ssr-demo-plain-html")]
+    private PlainFormModel? Plain { get; set; }
+
+    private bool FeedbackSubmitted;
+    private bool FeedbackInvalid;
+    private bool PlainSubmitted;
+    private DateTimeOffset? FeedbackSubmittedAt;
+    private DateTimeOffset? PlainSubmittedAt;
+
+    protected override void OnInitialized()
+    {
+        Feedback ??= new FeedbackModel();
+        Plain ??= new PlainFormModel();
+    }
+
+    private void SubmitFeedback()
+    {
+        FeedbackSubmitted = true;
+        FeedbackInvalid = false;
+        FeedbackSubmittedAt = DateTimeOffset.Now;
+    }
+
+    private void InvalidFeedback()
+    {
+        FeedbackSubmitted = false;
+        FeedbackInvalid = true;
+        FeedbackSubmittedAt = DateTimeOffset.Now;
+    }
+
+    private void SubmitPlainForm()
+    {
+        PlainSubmitted = true;
+        PlainSubmittedAt = DateTimeOffset.Now;
+    }
+
+    private string PostSummary =>
+        $"""
+        Feedback:
+          Name: {Feedback?.Name}
+          Rating: {Feedback?.Rating}
+          Notes: {Feedback?.Notes}
+
+        Plain HTML:
+          Email: {Plain?.Email}
+          Intent: {Plain?.Intent}
+          Message: {Plain?.Message}
+        """;
+
+    private sealed class FeedbackModel
+    {
+        [Required]
+        [StringLength(60, MinimumLength = 2)]
+        public string? Name { get; set; }
+
+        [Range(1, 5)]
+        public int Rating { get; set; } = 4;
+
+        [StringLength(500)]
+        public string? Notes { get; set; }
+    }
+
+    private sealed class PlainFormModel
+    {
+        public string? Email { get; set; }
+        public string? Intent { get; set; } = "navigation";
+        public string? Message { get; set; }
+    }
+}

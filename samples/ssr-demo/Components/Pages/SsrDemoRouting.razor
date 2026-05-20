@@ -1,0 +1,89 @@
+@page "/ssr-demo/routing"
+@page "/ssr-demo/routing/{Slug}"
+@using Microsoft.AspNetCore.Components
+
+<PageTitle>SSR Routing and Query Demo</PageTitle>
+
+<div class="container py-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <span class="badge text-bg-primary mb-2">Routing and query</span>
+            <h1 class="h2 mb-1">Routes and query strings demo</h1>
+            <p class="text-secondary mb-0">Use these links to verify server-side route matching, query binding, and repeated enhanced navigation.</p>
+        </div>
+        <a class="btn btn-outline-secondary" href="/ssr-demo">Back to SSR demos</a>
+    </div>
+
+    <SsrDemoProbe />
+
+    <div class="row g-3">
+        <div class="col-lg-5">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-body-tertiary">Bound values</div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Route slug</dt>
+                        <dd class="col-sm-8"><code>@(Slug ?? "(none)")</code></dd>
+
+                        <dt class="col-sm-4">Filter</dt>
+                        <dd class="col-sm-8"><code>@(Filter ?? "(none)")</code></dd>
+
+                        <dt class="col-sm-4">Page</dt>
+                        <dd class="col-sm-8"><code>@Page</code></dd>
+
+                        <dt class="col-sm-4">Show details</dt>
+                        <dd class="col-sm-8"><code>@ShowDetails</code></dd>
+
+                        <dt class="col-sm-4">Request stamp</dt>
+                        <dd class="col-sm-8"><code>@RequestStamp</code></dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-body-tertiary">Navigation matrix</div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a class="btn btn-primary" href="/ssr-demo/routing/alpha?filter=runtime&page=1&showDetails=true">Alpha details</a>
+                        <a class="btn btn-primary" href="/ssr-demo/routing/bravo?filter=forms&page=2&showDetails=false">Bravo forms</a>
+                        <a class="btn btn-primary" href="/ssr-demo/routing/charlie?filter=streaming&page=3&showDetails=true">Charlie streaming</a>
+                        <a class="btn btn-outline-primary" href="/ssr-demo/routing?filter=no-slug&page=4">No route slug</a>
+                        <a class="btn btn-outline-danger" data-enhance-nav="false" href="/ssr-demo/routing/delta?filter=full-reload&page=5&showDetails=true">Opt out reload</a>
+                    </div>
+
+                    @if (ShowDetails)
+                    {
+                        <div class="alert alert-success mt-4 mb-0">
+                            <strong>Details are enabled.</strong>
+                            This panel should appear and disappear as the query string changes during enhanced navigation.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-light border mt-4 mb-0">
+                            Details are disabled. Add <code>showDetails=true</code> to display the conditional server-rendered section.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string? Slug { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? Filter { get; set; }
+
+    [SupplyParameterFromQuery]
+    public int Page { get; set; } = 1;
+
+    [SupplyParameterFromQuery]
+    public bool ShowDetails { get; set; }
+
+    private readonly string RequestStamp = Guid.NewGuid().ToString("N").Substring(0, 12);
+}

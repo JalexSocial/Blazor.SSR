@@ -1,0 +1,55 @@
+@page "/ssr-demo"
+
+<PageTitle>Blazor SSR Runtime Demo</PageTitle>
+
+<div class="container py-4">
+    <div class="p-4 p-md-5 mb-4 bg-body-tertiary rounded-3 border shadow-sm">
+        <div class="container-fluid py-3">
+            <span class="badge text-bg-primary mb-3">Static SSR validation suite</span>
+            <h1 class="display-6 fw-semibold">Blazor SSR Runtime Demo</h1>
+            <p class="fs-5 text-secondary mb-0">
+                These pages are designed to exercise a standalone <code>blazor.ssr.js</code> runtime that implements the static SSR portions
+                of <code>blazor.web.js</code>, including enhanced navigation, streaming rendering, enhanced forms, DOM preservation, route/query binding, and runtime lifecycle events.
+            </p>
+        </div>
+    </div>
+
+    <SsrDemoProbe />
+
+    <div class="row g-3">
+        @foreach (var demo in Demos)
+        {
+            <div class="col-md-6 col-xl-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between gap-2 align-items-start">
+                            <h2 class="h5">@demo.Title</h2>
+                            <span class="badge text-bg-light border">@demo.Badge</span>
+                        </div>
+                        <p class="text-secondary flex-grow-1">@demo.Description</p>
+                        <a class="btn btn-primary align-self-start" href="@demo.Href">Open demo</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="alert alert-info mt-4">
+        <strong>How to use this suite:</strong> open the lifecycle page with a hard refresh first so the probe script is installed,
+        then move through the demo links using normal navigation. The event log should record enhanced navigation and enhanced load events without requiring <code>blazor.web.js</code>.
+    </div>
+</div>
+
+@code {
+    private static readonly DemoLink[] Demos =
+    {
+        new DemoLink("Enhanced navigation", "/ssr-demo/enhanced-navigation", "Exercises same-origin anchor interception, query-string navigation, hash links, history behavior, and opt-out links.", "navigation"),
+        new DemoLink("Streaming rendering", "/ssr-demo/streaming", "Uses static SSR streaming with multiple delayed updates so you can see whether streamed fragments are patched into the DOM.", "streaming"),
+        new DemoLink("Enhanced forms", "/ssr-demo/forms", "Covers enhanced EditForm posts, plain HTML form posts, form names, antiforgery tokens, and server-side validation.", "forms"),
+        new DemoLink("Routes and query strings", "/ssr-demo/routing/alpha?filter=runtime&page=2&showDetails=true", "Validates route parameters, query parameters, repeated enhanced navigation, and server-rendered request stamps.", "routing"),
+        new DemoLink("DOM preservation", "/ssr-demo/preservation", "Tests data-permanent islands, local DOM mutations, ordinary replaced DOM, and data-enhance-nav opt-out behavior.", "preserve"),
+        new DemoLink("Lifecycle events", "/ssr-demo/events", "Shows the runtime probe for Blazor.addEventListener, enhancedload, enhancednavigationstart, and enhancednavigationend.", "events")
+    };
+
+    private sealed record DemoLink(string Title, string Href, string Description, string Badge);
+}
