@@ -1,0 +1,72 @@
+name: Publish npm package
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-npm-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build, verify, and publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js for npm
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify toolchain
+        run: npm run verify:toolchain
+
+      - name: Prepare npm package in dist
+        run: npm run prepare:npm-package
+
+      - name: Read package metadata
+        id: package
+        shell: bash
+        run: |
+          NAME=$(node -p "require('./dist/package.json').name")
+          VERSION=$(node -p "require('./dist/package.json').version")
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Preparing to publish $NAME@$VERSION"
+
+      - name: Check whether version already exists on npm
+        id: npm_version
+        shell: bash
+        run: |
+          if npm view "${{ steps.package.outputs.name }}@${{ steps.package.outputs.version }}" version --registry=https://registry.npmjs.org/ >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "${{ steps.package.outputs.name }}@${{ steps.package.outputs.version }} already exists on npm. Skipping publish."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "${{ steps.package.outputs.name }}@${{ steps.package.outputs.version }} does not exist on npm. Publishing."
+          fi
+
+      - name: Show npm package contents
+        if: steps.npm_version.outputs.exists == 'false'
+        run: npm pack ./dist --dry-run
+
+      - name: Publish to npm
+        if: steps.npm_version.outputs.exists == 'false'
+        working-directory: ./dist
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

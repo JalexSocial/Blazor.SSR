@@ -1,6 +1,6 @@
 {
-  "name": "@microsoft/microsoft.aspnetcore.components.web.js",
-  "private": true,
+  "name": "@jalexsocial/blazor.ssr",
+  "private": false,
   "version": "0.0.1",
   "description": "Standalone static SSR-focused Blazor JavaScript runtime extraction.",
   "main": "index.js",
@@ -21,7 +21,10 @@
     "verify:toolchain": "npm run build && npm test && npm run lint && npm run check:ssr-boundary && npm run check:ssr-bundle",
     "check:ssr-boundary": "node scripts/check-ssr-boundary.mjs",
     "size:ssr": "node scripts/size-ssr-bundle.mjs",
-    "check:ssr-bundle": "node scripts/check-ssr-bundle.mjs"
+    "check:ssr-bundle": "node scripts/check-ssr-bundle.mjs",
+    "prepare:npm-package": "node scripts/prepare-npm-package.mjs",
+    "pack:dist": "npm run build && npm run prepare:npm-package && npm pack ./dist --dry-run",
+    "publish:dist": "npm run build && npm run prepare:npm-package && npm publish ./dist --access public"
   },
   "devDependencies": {
     "@babel/core": "^7.28.5",
@@ -42,5 +45,18 @@
     "jest-junit": "^16.0.0",
     "rollup": "^4.53.3",
     "typescript": "^5.9.3"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JalexSocial/Blazor.SSR.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JalexSocial/Blazor.SSR/issues"
+  },
+  "homepage": "https://github.com/JalexSocial/Blazor.SSR#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }
