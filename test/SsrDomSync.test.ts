@@ -68,7 +68,7 @@ describe('SsrDomSync', () => {
     expect(range.startExclusive.nextSibling!.textContent).toBe('Goodbye');
   });
 
-  test('preserves user-entered form values when the incoming element has no explicit value', () => {
+  test('clears user-entered form values when incoming SSR content has no explicit value state', () => {
     const range = makeExistingContent('<form><input name="q"><textarea name="notes"></textarea><input type="checkbox" name="ok"><input type="radio" name="choice"></form>');
     const input = range.startExclusive.nextSibling!.firstChild as HTMLInputElement;
     const textarea = input.nextSibling as HTMLTextAreaElement;
@@ -81,10 +81,10 @@ describe('SsrDomSync', () => {
 
     synchronizeSsrDomContent(range, makeNewContent('<form><input name="q" class="updated"><textarea name="notes"></textarea><input type="checkbox" name="ok"><input type="radio" name="choice"></form>'));
 
-    expect(input.value).toBe('typed value');
-    expect(textarea.value).toBe('typed notes');
-    expect(checkbox.checked).toBe(true);
-    expect(radio.checked).toBe(true);
+    expect(input.value).toBe('');
+    expect(textarea.value).toBe('');
+    expect(checkbox.checked).toBe(false);
+    expect(radio.checked).toBe(false);
     expect(input.className).toBe('updated');
   });
 
@@ -102,6 +102,30 @@ describe('SsrDomSync', () => {
     expect(input.value).toBe('server value');
     expect(textarea.value).toBe('server notes');
     expect(checkbox.checked).toBe(true);
+  });
+
+
+  test('updates select selectedIndex from incoming SSR content', () => {
+    const range = makeExistingContent('<form><select name="choice"><option value="a" selected>A</option><option value="b">B</option><option value="c">C</option></select></form>');
+    const select = range.startExclusive.nextSibling!.firstChild as HTMLSelectElement;
+
+    select.selectedIndex = 2;
+
+    synchronizeSsrDomContent(range, makeNewContent('<form><select name="choice"><option value="a">A</option><option value="b" selected>B</option><option value="c">C</option></select></form>'));
+
+    expect(select.selectedIndex).toBe(1);
+    expect(select.value).toBe('b');
+  });
+
+  test('does not reset editable values inside data-permanent elements', () => {
+    const range = makeExistingContent('<section data-permanent="form-island"><input name="q"></section>');
+    const input = (range.startExclusive.nextSibling as Element).querySelector('input') as HTMLInputElement;
+
+    input.value = 'client-owned value';
+
+    synchronizeSsrDomContent(range, makeNewContent('<section data-permanent="form-island"><input name="q" value="server value"></section>'));
+
+    expect(input.value).toBe('client-owned value');
   });
 
   test('removes elements not present in the new document', () => {
