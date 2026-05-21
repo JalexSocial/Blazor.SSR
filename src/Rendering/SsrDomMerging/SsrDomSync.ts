@@ -230,15 +230,13 @@ function ensureEditableValueSynchronized(destination: Element, value: string | b
 
 function getEditableElementValue(destination: Element, source: Element): string | boolean | number | null {
   if (destination instanceof HTMLSelectElement && source instanceof HTMLSelectElement) {
-    return source.querySelector('option[selected]') ? source.selectedIndex : destination.selectedIndex;
+    return source.selectedIndex;
   } else if (destination instanceof HTMLInputElement && source instanceof HTMLInputElement) {
-    if (destination.type === 'checkbox' || destination.type === 'radio') {
-      return source.hasAttribute('checked') ? source.checked : destination.checked;
-    }
-
-    return source.hasAttribute('value') ? source.getAttribute('value') || '' : destination.value;
+    return source.type === 'checkbox' || source.type === 'radio'
+      ? source.checked
+      : source.getAttribute('value') || '';
   } else if (destination instanceof HTMLTextAreaElement && source instanceof HTMLTextAreaElement) {
-    return source.textContent ? source.value : destination.value;
+    return source.value;
   } else {
     return null;
   }
